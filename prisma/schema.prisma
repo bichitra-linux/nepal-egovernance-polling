@@ -1,0 +1,55 @@
+// Add these at the top of your schema file
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
+  
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String?
+  email     String   @unique
+  password  String?
+  role      String   @default("user") // "user" or "admin"
+  image     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  phoneNumber    String?
+  province       String?
+  district       String?
+  localLevel     String?
+  citizenshipNo  String?
+  nationalIdNo   String?
+  voterIdNo      String?
+  polls     Poll[]
+  votes     Vote[]
+}
+
+model Poll {
+  id          Int       @id @default(autoincrement())
+  title       String
+  description String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  userId      String
+  status      String    @default("draft")  // Changed from "published" to "draft"
+  startedAt   DateTime? // When poll becomes active
+  finishedAt  DateTime? // When poll ends
+  finishDuration Int?    // Duration in days
+  user        User      @relation(fields: [userId], references: [id])
+  votes       Vote[]
+}
+
+model Vote {
+  id        Int       @id @default(autoincrement())
+  pollId    Int
+  userId    String
+  voteType  String    @default("positive") // "positive" or "negative"
+  poll      Poll      @relation(fields: [pollId], references: [id])
+  user      User      @relation(fields: [userId], references: [id])
+}

@@ -69,12 +69,19 @@ const Sidebar: React.FC = () => {
     // Check authentication status
     const isAuthenticated = status === 'authenticated';
     const isAdmin = isAuthenticated && session?.user?.role === 'admin';
+    const isRootPath = pathname === '/';
+    const isAboutPath = pathname === '/about';
+    const isSecurityPath = pathname === '/about/security';
+    const isLoginPath = pathname === '/login';
+    const isRegisterPath = pathname === '/register';
+    const isAdminLoginPath = pathname === '/admin/login';
+    const isAdminRegisterPath = pathname === '/admin/register';
     
     // Get translations based on current language
     const t = translations[language];
 
     // Don't render sidebar for unauthenticated users
-    if (!isAuthenticated) {
+    if (!isAuthenticated || isRootPath || isAboutPath || isLoginPath || isRegisterPath || isAdminLoginPath || isAdminRegisterPath || isSecurityPath) {
         return null;
     }
 
@@ -173,18 +180,7 @@ const Sidebar: React.FC = () => {
                                         )}>
                                             {t.managePolls}
                                         </Link>
-                                        <Link href="/admin/users" className={cn(
-                                            "block py-2 px-3 text-sm rounded-md hover:bg-blue-50 transition-colors",
-                                            pathname === "/admin/users" && "bg-blue-100 font-medium"
-                                        )}>
-                                            {t.users}
-                                        </Link>
-                                        <Link href="/admin/settings" className={cn(
-                                            "block py-2 px-3 text-sm rounded-md hover:bg-blue-50 transition-colors",
-                                            pathname === "/admin/settings" && "bg-blue-100 font-medium"
-                                        )}>
-                                            {t.settings}
-                                        </Link>
+                                        
                                     </div>
                                 </AccordionContent>
                             </AccordionItem>

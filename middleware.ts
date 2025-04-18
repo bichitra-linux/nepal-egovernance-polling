@@ -1,11 +1,33 @@
 import { NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
 import type { NextRequest } from "next/server";
-import { UserRole } from "@/types/next-auth"; // Import the UserRole type
+import { UserRole } from "@/types/next-auth";
 
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
   
+  // Handle root path specifically
+  if (path === "/") {
+    const token = await getToken({
+      req: request,
+      secret: process.env.JWT_SECRET,
+    });
+
+    if (token) {
+      // If admin user, redirect to admin dashboard
+      if (token.role === "admin") {
+        return NextResponse.redirect(new URL("/admin", request.url));
+      }
+      
+      // If regular user, redirect to user dashboard
+      return NextResponse.redirect(new URL("/dashboard", request.url));
+    }
+    
+    // Non-authenticated users can access the landing page
+    return NextResponse.next();
+  }
+  
+  // Handle other protected routes as before
   const protectedAdminRoutes = path.startsWith("/admin") && 
     !path.startsWith("/admin/login") && 
     !path.startsWith("/admin/register");
@@ -42,6 +64,7 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
+    "/",  // Add home path to the matcher
     "/admin/:path*",
     "/dashboard/:path*",
     "/polls/create",

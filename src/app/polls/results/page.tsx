@@ -1,14 +1,11 @@
 "use client";
-import React, { useEffect, useState } from 'react';
-import axios from 'axios';
-import PollCard from '../../components/polls/poll-card';
+import React, { useEffect, useState } from "react";
+import axios from "axios";
+import PollCard from "@/components/polls/poll-card";
 import { ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import Link from 'next/link';
+import Link from "next/link";
 import { Poll } from "@/types";
-
-
-
 
 const PollsResultPage = () => {
   const [polls, setPolls] = useState<Poll[]>([]);
@@ -19,8 +16,8 @@ const PollsResultPage = () => {
     const fetchPolls = async () => {
       try {
         setLoading(true);
-        const response = await axios.get('/api/polls/finished');
-        
+        const response = await axios.get("/api/polls/finished");
+
         if (response.data && response.data.polls) {
           setPolls(response.data.polls);
         } else {
@@ -45,8 +42,8 @@ const PollsResultPage = () => {
 
   if (loading) return <div className="container mx-auto p-6">Loading polls...</div>;
   if (error) return <div className="container mx-auto p-6">Error: {error}</div>;
-  if (polls.length === 0) return <div className="container mx-auto p-6">No polls available at this time.</div>;
-
+  if (polls.length === 0)
+    return <div className="container mx-auto p-6">No polls available at this time.</div>;
 
   return (
     <div className="container mx-auto p-6">
@@ -64,11 +61,6 @@ const PollsResultPage = () => {
                 </Link>
               </Button>
             </div>
-            {poll.finishedAt && (
-              <div className="mt-4 text-xs text-gray-500">
-                Completed on: {new Date(poll.finishedAt).toLocaleDateString()}
-              </div>
-            )}
           </div>
         ))}
       </div>

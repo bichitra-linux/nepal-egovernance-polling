@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db";
 import { authOptions } from "../../../auth/[...nextauth]/route";
 
 // Get single poll details
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+export async function GET(request: Request, context: { params: { id: string } }) {
   try {
     const session = await getServerSession(authOptions);
 
@@ -12,7 +12,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
       return NextResponse.json({ message: "Unauthorized" }, { status: 403 });
     }
 
-    const id = parseInt(params.id);
+    const id = parseInt(context.params.id);
 
     if (isNaN(id)) {
       return NextResponse.json({ message: "Invalid poll ID" }, { status: 400 });
@@ -46,7 +46,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
 }
 
 // Update poll
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
+export async function PUT(request: Request, context: { params: { id: string } }) {
   try {
     const session = await getServerSession(authOptions);
 
@@ -54,7 +54,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
       return NextResponse.json({ message: "Unauthorized" }, { status: 403 });
     }
 
-    const id = parseInt(params.id);
+    const id = parseInt(context.params.id);
 
     if (isNaN(id)) {
       return NextResponse.json({ message: "Invalid poll ID" }, { status: 400 });
@@ -99,7 +99,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
 }
 
 // Delete poll
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(request: Request, context : { params: { id: string } }) {
   try {
     const session = await getServerSession(authOptions);
 
@@ -107,7 +107,7 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
       return NextResponse.json({ message: "Unauthorized" }, { status: 403 });
     }
 
-    const id = parseInt(params.id);
+    const id = parseInt(context.params.id);
 
     if (isNaN(id)) {
       return NextResponse.json({ message: "Invalid poll ID" }, { status: 400 });

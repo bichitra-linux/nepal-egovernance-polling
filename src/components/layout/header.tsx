@@ -184,6 +184,21 @@ const Header: React.FC = () => {
 
             {/* Right side elements */}
             <div className="flex flex-col items-end gap-2">
+            <div className="w-20 h-24 relative">
+                <Image
+                  src="/images/flag.gif"
+                  alt="Nepal Flag"
+                  width={70}
+                  height={70}
+                  className="object-contain"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.onerror = null;
+                    target.src =
+                      "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%23c00' /%3E%3C/svg%3E";
+                  }}
+                />
+              </div>
               {/* Language selector */}
               <div className="text-sm flex gap-1">
                 <Button
@@ -289,10 +304,7 @@ const Header: React.FC = () => {
                     <DropdownMenuContent className="bg-white rounded shadow-lg border border-gray-200 w-48">
                       <div className="h-1 bg-gradient-to-r from-red-700 to-blue-900"></div>
                       <DropdownMenuItem asChild>
-                        <Link
-                          href="/polls"
-                          className="cursor-pointer flex items-center gap-2"
-                        >
+                        <Link href="/polls" className="cursor-pointer flex items-center gap-2">
                           <span className="text-red-700">•</span>
                           {t.activePolls}
                         </Link>

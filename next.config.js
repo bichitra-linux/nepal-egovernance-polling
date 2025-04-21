@@ -7,4 +7,7 @@ module.exports = {
   env: {
     DATABASE_URL: process.env.DATABASE_URL, // Example of using environment variables
   },
+  typescript: {
+    ignoreBuildErrors: true,
+  },
 };

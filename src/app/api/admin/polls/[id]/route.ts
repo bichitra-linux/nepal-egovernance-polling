@@ -3,8 +3,10 @@ import { getServerSession } from "next-auth/next";
 import { prisma } from "@/lib/db";
 import { authOptions } from "../../../auth/[...nextauth]/route";
 
+type CustomContext = { params: { id: string } };
+
 // Get single poll details
-export async function GET(request: Request, context: { params: { id: string } }) {
+export async function GET(request: Request, context: CustomContext) {
   try {
     const session = await getServerSession(authOptions);
 

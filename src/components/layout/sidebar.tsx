@@ -76,12 +76,13 @@ const Sidebar: React.FC = () => {
     const isRegisterPath = pathname === '/register';
     const isAdminLoginPath = pathname === '/admin/login';
     const isAdminRegisterPath = pathname === '/admin/register';
+    const isUnauthorizedPath = pathname === '/unauthorized';
     
     // Get translations based on current language
     const t = translations[language];
 
     // Don't render sidebar for unauthenticated users
-    if (!isAuthenticated || isRootPath || isAboutPath || isLoginPath || isRegisterPath || isAdminLoginPath || isAdminRegisterPath || isSecurityPath) {
+    if (!isAuthenticated || isRootPath || isAboutPath || isLoginPath || isUnauthorizedPath || isRegisterPath || isAdminLoginPath || isAdminRegisterPath || isSecurityPath) {
         return null;
     }
 

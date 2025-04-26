@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { ArrowLeft, ThumbsUp, ThumbsDown, Users } from "lucide-react";
+import { ThumbsUp, ThumbsDown, Users } from "lucide-react";
+import { Calendar, User, ArrowLeft, ArrowRight } from "lucide-react";
 import { Poll } from "@/types";
 // Extend Poll interface to include results
 interface PollResults {
@@ -110,71 +111,121 @@ export default function PollResults() {
 
   return (
     <div className="container mx-auto p-4 max-w-5xl">
-      <div className="mb-6">
-      <Button variant="outline" asChild className="mx-2">
-          <Link href={`/polls/${id}`}>Back to Poll</Link>
-        </Button>
-        <h1 className="text-3xl font-bold mt-4 mb-2">Poll Results</h1>
-        {poll.status && (
-          <Badge
-            variant="outline"
-            className={`${
-              isPollActive
-                ? "bg-green-100 text-green-800 border-green-300"
-                : isPollFinished
-                ? "bg-gray-100 text-gray-800 border-gray-300"
-                : "bg-yellow-100 text-yellow-800 border-yellow-300"
-            }`}
-          >
-            {isPollActive ? "Active" : isPollFinished ? "Finished" : "Draft"}
-          </Badge>
-        )}
+      {/* Enhanced header section */}
+      <div className="mb-8">
+        <div className="flex flex-wrap items-center gap-3 mb-4">
+          <Button variant="outline" asChild className="hover:bg-gray-50 transition-colors">
+            <Link href={`/polls/${id}`} className="flex items-center">
+              <ArrowLeft className="h-4 w-4 mr-1.5" />
+              Back to Poll
+            </Link>
+          </Button>
+          
+          {poll.status && (
+            <Badge
+              variant="outline"
+              className={`${
+                isPollActive
+                  ? "bg-green-100 text-green-800 border-green-300"
+                  : isPollFinished
+                  ? "bg-gray-100 text-gray-800 border-gray-300"
+                  : "bg-yellow-100 text-yellow-800 border-yellow-300"
+              } ml-1 font-medium`}
+            >
+              {isPollActive ? "Active" : isPollFinished ? "Finished" : "Draft"}
+            </Badge>
+          )}
+        </div>
+        
+        <h1 className="text-3xl font-bold mb-2 text-gray-900">Poll Results</h1>
+        <div className="h-1 w-20 bg-blue-600 rounded-full mb-4"></div>
       </div>
 
-      <Card className="mb-8">
-        <CardHeader>
-          <CardTitle>{poll.title}</CardTitle>
+      {/* Enhanced poll details card */}
+      <Card className="mb-10 border border-gray-200 shadow-sm hover:shadow-md transition-all duration-300">
+        <CardHeader className="border-b bg-gray-50 pb-4">
+          <CardTitle className="text-xl text-gray-800">{poll.title}</CardTitle>
         </CardHeader>
-        <CardContent>
-          <p className="text-gray-600 mb-4">{poll.description}</p>
-          <div className="flex justify-between text-sm text-gray-500">
-            <div>
-              <p>Created by: {poll.user?.name || poll.user?.email || "Anonymous"}</p>
-              <p>Created: {new Date(poll.createdAt).toLocaleDateString()}</p>
+        <CardContent className="pt-5">
+          <p className="text-gray-600 mb-6 leading-relaxed">{poll.description}</p>
+          
+          <div className="flex flex-wrap justify-between items-center text-sm text-gray-500 pt-2 border-t border-gray-100">
+            <div className="space-y-1 mt-3">
+              <p className="flex items-center">
+                <User className="h-4 w-4 mr-1.5 text-gray-400" />
+                Created by: <span className="font-medium ml-1">{poll.user?.name || poll.user?.email || "Anonymous"}</span>
+              </p>
+              <p className="flex items-center">
+                <Calendar className="h-4 w-4 mr-1.5 text-gray-400" />
+                Created: <span className="font-medium ml-1">{new Date(poll.createdAt).toLocaleDateString()}</span>
+              </p>
             </div>
-            <div className="flex items-center">
-              <Users className="h-4 w-4 mr-2" />
-              <span>Total votes: {results.totalVotes}</span>
+            
+            <div className="flex items-center bg-blue-50 px-3 py-2 rounded-lg mt-3">
+              <Users className="h-5 w-5 mr-2 text-blue-600" />
+              <div>
+                <span className="text-blue-800 font-medium text-base">{results.totalVotes}</span>
+                <span className="text-blue-700 text-sm ml-1">total votes</span>
+              </div>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+      {/* Summary section */}
+      <div className="mb-8 text-center">
+        <p className="text-lg">
+          {results.totalVotes > 0 ? (
+            <>
+              <span className="font-medium">
+                {results.positivePercentage > results.negativePercentage ? 'Support' : 
+                 results.negativePercentage > results.positivePercentage ? 'Opposition' : 'Equal support and opposition'}
+              </span> {results.positivePercentage === results.negativePercentage ? '' : 'leads with '}
+              {results.positivePercentage === results.negativePercentage ? 
+                `(${results.positivePercentage}% each)` : 
+                results.positivePercentage > results.negativePercentage ? 
+                  `${results.positivePercentage}% of votes` : 
+                  `${results.negativePercentage}% of votes`}
+            </>
+          ) : (
+            <span className="text-gray-500">No votes have been cast yet</span>
+          )}
+        </p>
+      </div>
+
+      {/* Enhanced results cards with animation */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
         {/* Positive Votes Card */}
         <Card
           className={`border-l-4 ${
             results.positiveVotes > 0 ? "border-l-green-500" : "border-l-gray-200"
-          }`}
+          } hover:shadow-md transition-all duration-300`}
         >
-          <CardHeader className="pb-2">
+          <CardHeader className="pb-2 bg-gradient-to-r from-green-50 to-transparent">
             <CardTitle className="text-lg flex items-center">
-              <ThumbsUp className="h-5 w-5 mr-2 text-green-600" />
+              <div className="bg-green-100 p-1.5 rounded-full mr-2.5">
+                <ThumbsUp className="h-5 w-5 text-green-600" />
+              </div>
               Support
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex flex-col items-center justify-center p-4">
-              <div className="text-5xl font-bold text-green-600 mb-2">{results.positiveVotes}</div>
-              <div className="text-gray-500">Votes in support</div>
+              <div className="flex items-center justify-center w-24 h-24 rounded-full bg-green-50 border-4 border-green-100 mb-3">
+                <div className="text-5xl font-bold text-green-600">{results.positiveVotes}</div>
+              </div>
+              <div className="text-gray-500 mb-4">Votes in support</div>
 
-              <div className="w-full bg-gray-200 rounded-full h-4 mt-4">
+              <div className="w-full bg-gray-200 rounded-full h-4 mt-2 overflow-hidden">
                 <div
-                  className="bg-green-500 h-4 rounded-full"
-                  style={{ width: `${results.positivePercentage}%` }}
+                  className="bg-green-500 h-4 rounded-full animate-grow-width"
+                  style={{ 
+                    width: `${results.positivePercentage}%`,
+                    animation: "growWidth 1s ease-out forwards"
+                  }}
                 />
               </div>
-              <div className="text-xl mt-2 font-semibold">{results.positivePercentage}%</div>
+              <div className="text-xl mt-3 font-semibold text-green-700">{results.positivePercentage}%</div>
             </div>
           </CardContent>
         </Card>
@@ -183,34 +234,88 @@ export default function PollResults() {
         <Card
           className={`border-l-4 ${
             results.negativeVotes > 0 ? "border-l-red-500" : "border-l-gray-200"
-          }`}
+          } hover:shadow-md transition-all duration-300`}
         >
-          <CardHeader className="pb-2">
+          <CardHeader className="pb-2 bg-gradient-to-r from-red-50 to-transparent">
             <CardTitle className="text-lg flex items-center">
-              <ThumbsDown className="h-5 w-5 mr-2 text-red-600" />
+              <div className="bg-red-100 p-1.5 rounded-full mr-2.5">
+                <ThumbsDown className="h-5 w-5 text-red-600" />
+              </div>
               Opposition
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex flex-col items-center justify-center p-4">
-              <div className="text-5xl font-bold text-red-600 mb-2">{results.negativeVotes}</div>
-              <div className="text-gray-500">Votes in opposition</div>
+              <div className="flex items-center justify-center w-24 h-24 rounded-full bg-red-50 border-4 border-red-100 mb-3">
+                <div className="text-5xl font-bold text-red-600">{results.negativeVotes}</div>
+              </div>
+              <div className="text-gray-500 mb-4">Votes in opposition</div>
 
-              <div className="w-full bg-gray-200 rounded-full h-4 mt-4">
+              <div className="w-full bg-gray-200 rounded-full h-4 mt-2 overflow-hidden">
                 <div
-                  className="bg-red-500 h-4 rounded-full"
-                  style={{ width: `${results.negativePercentage}%` }}
+                  className="bg-red-500 h-4 rounded-full animate-grow-width"
+                  style={{ 
+                    width: `${results.negativePercentage}%`,
+                    animation: "growWidth 1s ease-out forwards"
+                  }}
                 />
               </div>
-              <div className="text-xl mt-2 font-semibold">{results.negativePercentage}%</div>
+              <div className="text-xl mt-3 font-semibold text-red-700">{results.negativePercentage}%</div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      <div className="flex justify-center mt-8">
-        <Button variant="outline" asChild className="mx-2">
-          <Link href="/polls">View All Polls</Link>
+      {/* Comparison section */}
+      {results.totalVotes > 0 && (
+        <Card className="mb-10 overflow-hidden border border-gray-200 shadow-sm">
+          <CardHeader className="bg-gray-50 border-b">
+            <CardTitle className="text-base">Comparison</CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="flex h-12">
+              <div
+                className="h-full bg-green-500 flex items-center justify-center text-white font-medium"
+                style={{ width: `${results.positivePercentage}%` }}
+              >
+                {results.positivePercentage > 15 ? `${results.positivePercentage}%` : ''}
+              </div>
+              <div
+                className="h-full bg-red-500 flex items-center justify-center text-white font-medium"
+                style={{ width: `${results.negativePercentage}%` }}
+              >
+                {results.negativePercentage > 15 ? `${results.negativePercentage}%` : ''}
+              </div>
+            </div>
+            <div className="flex text-xs p-1">
+              <div style={{ width: '50%' }} className="text-center border-r">Support</div>
+              <div style={{ width: '50%' }} className="text-center">Opposition</div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      <div className="flex justify-center gap-3 mt-10 mb-4">
+        <Button 
+          variant="outline" 
+          asChild 
+          className="shadow-sm hover:shadow-md hover:bg-gray-50 transition-all"
+        >
+          <Link href="/polls">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            View All Polls
+          </Link>
+        </Button>
+        
+        <Button 
+          variant="default" 
+          asChild 
+          className="shadow-sm hover:shadow-md transition-all bg-blue-600"
+        >
+          <Link href={`/polls/${id}`}>
+            <ArrowRight className="h-4 w-4 mr-2" />
+            Back to Poll
+          </Link>
         </Button>
       </div>
     </div>

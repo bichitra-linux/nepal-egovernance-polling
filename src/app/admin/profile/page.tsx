@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useLanguage } from '@/context/language-context';
@@ -17,8 +17,12 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Toaster } from "@/components/ui/sonner";
-import { AlertCircle, BarChart2, Check, Key, Lock, Mail, Shield, User } from "lucide-react";
+import { AlertCircle, BarChart2, Camera, Key, Lock, Mail, Shield, User, Eye, EyeOff } from "lucide-react";
 import { toast } from 'sonner';
+
+// Maximum file size: 5MB
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
+const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 
 const formSchema = z.object({
   name: z.string().min(2, {
@@ -27,6 +31,26 @@ const formSchema = z.object({
   email: z.string().email({
     message: "Please enter a valid email address.",
   }),
+  image: z.any()
+    .optional()
+    .refine((files) => {
+      // Skip validation on server
+      if (typeof window === "undefined") return true;
+      if (!files || files.length === 0) return true;
+      return files.length === 1;
+    }, "Please upload only one file")
+    .refine((files) => {
+      // Skip validation on server
+      if (typeof window === "undefined") return true;
+      if (!files || files.length === 0) return true;
+      return files[0].size <= MAX_FILE_SIZE;
+    }, `Max image size is 5MB.`)
+    .refine((files) => {
+      // Skip validation on server
+      if (typeof window === "undefined") return true;
+      if (!files || files.length === 0) return true;
+      return ACCEPTED_IMAGE_TYPES.includes(files[0].type);
+    }, "Only .jpg, .jpeg, .png and .webp formats are supported."),
 });
 
 const passwordSchema = z.object({
@@ -44,14 +68,24 @@ const passwordSchema = z.object({
   path: ["confirmPassword"],
 });
 
+type FormValues = z.infer<typeof formSchema> & {
+  image?: FileList | null;
+};
+type PasswordFormValues = z.infer<typeof passwordSchema>;
+
 export default function AdminProfilePage() {
   const { data: session, status, update } = useSession();
   const router = useRouter();
   const { language } = useLanguage();
   const [isUpdating, setIsUpdating] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
-  const [activityData, setActivityData] = useState([]);
+  const [activityData, setActivityData] = useState<Array<{ action: string; timestamp: string }>>([]);
   const [isLoadingActivity, setIsLoadingActivity] = useState(true);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Translations
   const t = {
@@ -65,6 +99,10 @@ export default function AdminProfilePage() {
     updateYourInfo: language === 'ne' ? 'तपाईंको व्यक्तिगत जानकारी अपडेट गर्नुहोस्' : 'Update your personal information',
     name: language === 'ne' ? 'नाम' : 'Name',
     email: language === 'ne' ? 'इमेल' : 'Email',
+    profilePicture: language === 'ne' ? 'प्रोफाइल तस्वीर' : 'Profile Picture',
+    uploadPicture: language === 'ne' ? 'तस्वीर अपलोड गर्नुहोस्' : 'Upload Picture',
+    changeImage: language === 'ne' ? 'तस्वीर परिवर्तन गर्नुहोस्' : 'Change Image',
+    removeImage: language === 'ne' ? 'तस्वीर हटाउनुहोस्' : 'Remove Image',
     role: language === 'ne' ? 'भूमिका' : 'Role',
     adminStatus: language === 'ne' ? 'प्रशासक स्थिति' : 'Admin Status',
     joinedOn: language === 'ne' ? 'सदस्यता लिएको मिति' : 'Joined on',
@@ -76,6 +114,8 @@ export default function AdminProfilePage() {
     cancel: language === 'ne' ? 'रद्द गर्नुहोस्' : 'Cancel',
     saveChanges: language === 'ne' ? 'परिवर्तनहरू सेभ गर्नुहोस्' : 'Save Changes',
     updatedSuccess: language === 'ne' ? 'प्रोफाइल सफलतापूर्वक अपडेट गरियो' : 'Profile updated successfully',
+    imageUpdated: language === 'ne' ? 'प्रोफाइल तस्वीर अपडेट भयो' : 'Profile picture updated',
+    imageRemoved: language === 'ne' ? 'प्रोफाइल तस्वीर हटाइयो' : 'Profile picture removed',
     passwordSuccess: language === 'ne' ? 'पासवर्ड सफलतापूर्वक परिवर्तन गरियो' : 'Password changed successfully',
     adminOnly: language === 'ne' ? 'यो पृष्ठ प्रशासकहरूको लागि मात्र हो' : 'This page is for administrators only',
     backToDashboard: language === 'ne' ? 'ड्यासबोर्डमा फर्कनुहोस्' : 'Back to Dashboard',
@@ -110,11 +150,9 @@ export default function AdminProfilePage() {
       
       const data = await response.json();
       setActivityData(data.activities || []);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching admin activity:', error);
-      toast({
-        variant: "destructive",
-        title: t.error,
+      toast.error(t.error, {
         description: error.message,
       });
     } finally {
@@ -122,15 +160,16 @@ export default function AdminProfilePage() {
     }
   };
 
-  const form = useForm({
+  const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
       email: "",
+      image: undefined,
     },
   });
 
-  const passwordForm = useForm({
+  const passwordForm = useForm<PasswordFormValues>({
     resolver: zodResolver(passwordSchema),
     defaultValues: {
       currentPassword: "",
@@ -145,23 +184,90 @@ export default function AdminProfilePage() {
         name: session.user.name || "",
         email: session.user.email || "",
       });
+
+      // Set initial profile image if available
+      if (session.user.image) {
+        setPreviewImage(session.user.image);
+      }
     }
   }, [session, form]);
 
-  async function onSubmit(values) {
+  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Create a preview URL
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreviewImage(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveImage = async () => {
     try {
       setIsUpdating(true);
+      const response = await fetch("/api/admin/profile-picture", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to remove profile picture");
+      }
+
+      // Update session and UI
+      setPreviewImage(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+
+      // Update the session
+      await update({
+        ...session,
+        user: {
+          ...session?.user,
+          image: null,
+        },
+      });
+
+      toast(t.imageRemoved, {
+        description: new Date().toLocaleDateString(),
+      });
+    } catch (error: any) {
+      console.error("Error removing profile picture:", error);
+      toast.error(t.error, {
+        description: error.message,
+      });
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  async function onSubmit(values: FormValues) {
+    try {
+      setIsUpdating(true);
+
+      // Create form data for multipart/form-data submission to handle files
+      const formData = new FormData();
+      formData.append("name", values.name);
+      formData.append("email", values.email);
+
+      // Append image file if provided
+      if (values.image && values.image.length > 0) {
+        formData.append("image", values.image[0]);
+      }
+
       const response = await fetch('/api/admin/profile', {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(values),
+        body: formData, // No Content-Type header needed for FormData
       });
 
       if (!response.ok) {
         throw new Error('Failed to update profile');
       }
+
+      const data = await response.json();
 
       // Update the session with new values
       await update({
@@ -170,18 +276,16 @@ export default function AdminProfilePage() {
           ...session?.user,
           name: values.name,
           email: values.email,
+          image: data.user?.image || session?.user?.image,
         },
       });
 
-      toast({
-        title: t.updatedSuccess,
+      toast(t.updatedSuccess, {
         description: new Date().toLocaleDateString(),
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating profile:', error);
-      toast({
-        variant: "destructive",
-        title: t.error,
+      toast.error(t.error, {
         description: error.message,
       });
     } finally {
@@ -189,7 +293,7 @@ export default function AdminProfilePage() {
     }
   }
 
-  async function onPasswordSubmit(values) {
+  async function onPasswordSubmit(values: PasswordFormValues) {
     try {
       setIsChangingPassword(true);
       const response = await fetch('/api/admin/change-password', {
@@ -210,15 +314,12 @@ export default function AdminProfilePage() {
 
       passwordForm.reset();
       
-      toast({
-        title: t.passwordSuccess,
+      toast(t.passwordSuccess, {
         description: new Date().toLocaleDateString(),
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error changing password:', error);
-      toast({
-        variant: "destructive",
-        title: t.error,
+      toast.error(t.error, {
         description: error.message,
       });
     } finally {
@@ -299,7 +400,10 @@ export default function AdminProfilePage() {
           <CardContent className="p-6">
             <div className="flex flex-col items-center">
               <Avatar className="h-24 w-24 mb-4">
-                <AvatarImage src="" alt={session?.user?.name || ""} />
+                <AvatarImage 
+                  src={previewImage || session?.user?.image || ""}
+                  alt={session?.user?.name || ""}
+                />
                 <AvatarFallback className="text-2xl bg-red-100 text-red-700">
                   {session?.user?.name?.split(' ').map(n => n[0]).join('').toUpperCase() || "A"}
                 </AvatarFallback>
@@ -375,7 +479,74 @@ export default function AdminProfilePage() {
               <CardContent className="pb-6">
                 <TabsContent value="personal" className="space-y-6">
                   <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                      {/* Profile Image Upload */}
+                      <FormField
+                        control={form.control}
+                        name="image"
+                        render={({ field: { value, onChange, ...field } }) => (
+                          <FormItem>
+                            <FormLabel>{t.profilePicture}</FormLabel>
+                            <FormControl>
+                              <div className="flex items-center gap-4">
+                                <div className="relative">
+                                  <Avatar className="h-20 w-20">
+                                    <AvatarImage
+                                      src={previewImage || session?.user?.image || ""}
+                                      alt={session?.user?.name || ""}
+                                    />
+                                    <AvatarFallback className="text-xl bg-red-100 text-red-700">
+                                      {session?.user?.name
+                                        ?.split(" ")
+                                        .map((n) => n[0])
+                                        .join("")
+                                        .toUpperCase() || "A"}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                </div>
+
+                                <div className="flex flex-col gap-2">
+                                  <input
+                                    type="file"
+                                    id="image"
+                                    className="sr-only"
+                                    accept="image/jpeg,image/png,image/webp"
+                                    ref={fileInputRef}
+                                    onChange={(e) => {
+                                      onChange(e.target.files);
+                                      handleImageChange(e);
+                                    }}
+                                    {...(field as Omit<typeof field, "ref">)}
+                                  />
+                                  <Label
+                                    htmlFor="image"
+                                    className="flex items-center justify-center gap-2 px-4 py-2 bg-red-50 text-red-700 rounded-md cursor-pointer hover:bg-red-100 transition-colors"
+                                  >
+                                    <Camera size={16} />
+                                    {t.changeImage}
+                                  </Label>
+                                  {(previewImage || session?.user?.image) && (
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      size="sm"
+                                      className="text-xs"
+                                      onClick={handleRemoveImage}
+                                      disabled={isUpdating}
+                                    >
+                                      {t.removeImage}
+                                    </Button>
+                                  )}
+                                </div>
+                              </div>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <Separator />
+
                       <FormField
                         control={form.control}
                         name="name"
@@ -426,7 +597,24 @@ export default function AdminProfilePage() {
                           <FormItem>
                             <FormLabel>{t.currentPassword}</FormLabel>
                             <FormControl>
-                              <Input type="password" {...field} />
+                              <div className="relative">
+                                <Input 
+                                  type={showCurrentPassword ? "text" : "password"} 
+                                  {...field} 
+                                />
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  className="absolute right-0 top-0 h-full px-3 py-2 text-muted-foreground"
+                                  onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                                >
+                                  {showCurrentPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                                  <span className="sr-only">
+                                    {showCurrentPassword ? "Hide password" : "Show password"}
+                                  </span>
+                                </Button>
+                              </div>
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -439,7 +627,24 @@ export default function AdminProfilePage() {
                           <FormItem>
                             <FormLabel>{t.newPassword}</FormLabel>
                             <FormControl>
-                              <Input type="password" {...field} />
+                              <div className="relative">
+                                <Input 
+                                  type={showNewPassword ? "text" : "password"} 
+                                  {...field} 
+                                />
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  className="absolute right-0 top-0 h-full px-3 py-2 text-muted-foreground"
+                                  onClick={() => setShowNewPassword(!showNewPassword)}
+                                >
+                                  {showNewPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                                  <span className="sr-only">
+                                    {showNewPassword ? "Hide password" : "Show password"}
+                                  </span>
+                                </Button>
+                              </div>
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -452,7 +657,24 @@ export default function AdminProfilePage() {
                           <FormItem>
                             <FormLabel>{t.confirmPassword}</FormLabel>
                             <FormControl>
-                              <Input type="password" {...field} />
+                              <div className="relative">
+                                <Input 
+                                  type={showConfirmPassword ? "text" : "password"} 
+                                  {...field} 
+                                />
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  className="absolute right-0 top-0 h-full px-3 py-2 text-muted-foreground"
+                                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                >
+                                  {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                                  <span className="sr-only">
+                                    {showConfirmPassword ? "Hide password" : "Show password"}
+                                  </span>
+                                </Button>
+                              </div>
                             </FormControl>
                             <FormMessage />
                           </FormItem>

@@ -44,6 +44,9 @@ const translations = {
     profile: "Profile",
     logout: "Log out",
     welcome: "Welcome",
+    resources: "Resources",
+    guidelines: "Guidelines",
+    help: "Help Center",
   },
   ne: {
     home: "गृहपृष्ठ",
@@ -61,6 +64,9 @@ const translations = {
     profile: "प्रोफाइल",
     logout: "लग आउट",
     welcome: "स्वागत छ",
+    resources: "स्रोतहरू",
+    guidelines: "निर्देशिकाहरू",
+    help: "सहायता केन्द्र",
   },
 };
 
@@ -184,7 +190,7 @@ const Header: React.FC = () => {
 
             {/* Right side elements */}
             <div className="flex flex-col items-end gap-2">
-            <div className="w-20 h-24 relative">
+              <div className="w-20 h-24 relative">
                 <Image
                   src="/images/flag.gif"
                   alt="Nepal Flag"
@@ -316,6 +322,69 @@ const Header: React.FC = () => {
                         >
                           <span className="text-blue-900">•</span>
                           {t.pollresults}
+                        </Link>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </NavigationMenuItem>
+                <NavigationMenuItem>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button className="flex items-center px-4 py-2.5 text-white font-medium hover:bg-red-600 transition-colors border-r border-red-600 relative group">
+                        <span className="mr-1.5">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20" />
+                            <path d="M8 7h6" />
+                            <path d="M8 11h8" />
+                          </svg>
+                        </span>
+                        {t.resources}
+                        <span className="ml-1.5">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="14"
+                            height="14"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                          </svg>
+                        </span>
+                        <div className="absolute bottom-0 left-0 w-0 h-1 bg-white group-hover:w-full transition-all duration-300"></div>
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="bg-white rounded shadow-lg border border-gray-200 w-48">
+                      <div className="h-1 bg-gradient-to-r from-red-700 to-blue-900"></div>
+                      <DropdownMenuItem asChild>
+                        <Link
+                          href="/resources/guidelines"
+                          className="cursor-pointer flex items-center gap-2"
+                        >
+                          <span className="text-red-700">•</span>
+                          {t.guidelines}
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link
+                          href="/resources/help"
+                          className="cursor-pointer flex items-center gap-2"
+                        >
+                          <span className="text-blue-900">•</span>
+                          {t.help}
                         </Link>
                       </DropdownMenuItem>
                     </DropdownMenuContent>

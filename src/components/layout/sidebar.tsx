@@ -77,12 +77,13 @@ const Sidebar: React.FC = () => {
     const isAdminLoginPath = pathname === '/admin/login';
     const isAdminRegisterPath = pathname === '/admin/register';
     const isUnauthorizedPath = pathname === '/unauthorized';
-    
+    const resourcePaths = ['/resources/guidelines', '/resources/help', '/resources/faqs', '/resources/documents'];
+    const isResourcesPath = resourcePaths.includes(pathname);    
     // Get translations based on current language
     const t = translations[language];
 
     // Don't render sidebar for unauthenticated users
-    if (!isAuthenticated || isRootPath || isAboutPath || isLoginPath || isUnauthorizedPath || isRegisterPath || isAdminLoginPath || isAdminRegisterPath || isSecurityPath) {
+    if (!isAuthenticated || isRootPath || isResourcesPath || isAboutPath || isLoginPath || isUnauthorizedPath || isRegisterPath || isAdminLoginPath || isAdminRegisterPath || isSecurityPath) {
         return null;
     }
 

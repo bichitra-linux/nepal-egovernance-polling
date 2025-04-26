@@ -1,10 +1,15 @@
+"use client";
+import React from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { ChevronRight, Vote, TrendingUp, Shield, Users } from "lucide-react";
 import { FeaturedPolls } from "@/components/polls/featured-polls";
+import { useSession } from "next-auth/react";
 
 export default function HomePage() {
+  const { data: session, status } = useSession();
+  const isAuthenticated = status === "authenticated";
   return (
     <div className="flex flex-col min-h-screen">
       {/* Hero Section */}
@@ -29,7 +34,11 @@ export default function HomePage() {
                   asChild
                   className="bg-white text-blue-700 hover:bg-gray-100"
                 >
-                  <Link href="/register">Create Account</Link>
+                  {isAuthenticated ? (
+                    <Link href="/dashboard">View Dashboard</Link>
+                  ) : (
+                    <Link href="/register">Create Account</Link>
+                  )}
                 </Button>
               </div>
             </div>
@@ -213,9 +222,11 @@ export default function HomePage() {
               size="lg"
               className="bg-white text-blue-700 hover:bg-gray-100 hover:text-blue-800 transition-colors border-2 border-transparent"
             >
-              <Link href="/register" className="w-full h-full flex items-center justify-center">
-                Create Account
-              </Link>
+              {isAuthenticated ? (
+                    <Link href="/dashboard">View Dashboard</Link>
+                  ) : (
+                    <Link href="/register">Create Account</Link>
+                  )}
             </Button>
 
             {/* Secondary Button - Clear outline style */}

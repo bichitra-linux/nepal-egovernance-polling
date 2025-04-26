@@ -45,7 +45,6 @@ type FormValues = z.infer<typeof formSchema>;
 
 export default function AdminLogin() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { language } = useLanguage();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -53,9 +52,27 @@ export default function AdminLogin() {
   const [error, setError] = useState<string | null>(null);
   const emailInputRef = useRef<HTMLInputElement>(null);
 
-  // Get callbackUrl from the URL query parameters
-  const callbackUrl = searchParams.get("callbackUrl") || "/admin";
-  const fromParam = searchParams.get("from");
+  // Use the useSearchParams hook with dynamic import to enable suspense
+  const [searchParams, setSearchParams] = useState<{
+    callbackUrl: string;
+    from: string | null;
+  }>({
+    callbackUrl: "/admin",
+    from: null
+  });
+
+  // Effect to get search params after component mounts
+  useEffect(() => {
+    // This safely uses the window object only on the client
+    const url = new URL(window.location.href);
+    const callbackUrl = url.searchParams.get("callbackUrl") || "/admin";
+    const from = url.searchParams.get("from");
+    
+    setSearchParams({
+      callbackUrl,
+      from
+    });
+  }, []);
 
   // Enhanced translations
   const translations = {
@@ -128,10 +145,10 @@ export default function AdminLogin() {
     }
     
     // Check if user was redirected due to session expiration
-    if (fromParam === "session-expired") {
+    if (searchParams.from === "session-expired") {
       toast.warning(t.sessionExpired);
     }
-  }, [fromParam, t.sessionExpired]);
+  }, [searchParams.from, t.sessionExpired]);
 
   // Toggle password visibility
   const togglePasswordVisibility = () => {
@@ -163,6 +180,7 @@ export default function AdminLogin() {
         email: data.email,
         password: data.password,
         redirect: false,
+        callbackUrl: searchParams.callbackUrl,
       });
 
       if (result?.error) {
@@ -190,7 +208,7 @@ export default function AdminLogin() {
           toast.success(t.loginSuccess);
           
           // Navigate to admin dashboard
-          router.push(callbackUrl);
+          router.push(searchParams.callbackUrl);
           router.refresh();
         } else {
           // Sign out if not an admin

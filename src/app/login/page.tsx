@@ -35,7 +35,6 @@ type FormValues = z.infer<typeof formSchema>;
 
 export default function Login() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { language } = useLanguage();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -43,9 +42,27 @@ export default function Login() {
   const [error, setError] = useState<string | null>(null);
   const emailInputRef = useRef<HTMLInputElement>(null);
 
-  // Get callbackUrl from the URL query parameters
-  const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
-  const fromParam = searchParams.get("from");
+  // Use the useSearchParams hook with dynamic import to enable suspense
+  const [searchParams, setSearchParams] = useState<{
+    callbackUrl: string;
+    from: string | null;
+  }>({
+    callbackUrl: "/dashboard",
+    from: null
+  });
+
+  // Effect to get search params after component mounts
+  useEffect(() => {
+    // This safely uses the window object only on the client
+    const url = new URL(window.location.href);
+    const callbackUrl = url.searchParams.get("callbackUrl") || "/dashboard";
+    const from = url.searchParams.get("from");
+    
+    setSearchParams({
+      callbackUrl,
+      from
+    });
+  }, []);
   
   // Translations
   const translations = {
@@ -112,10 +129,10 @@ export default function Login() {
     }
     
     // Check if user was redirected due to session expiration
-    if (fromParam === "session-expired") {
+    if (searchParams.from === "session-expired") {
       toast.warning(t.sessionExpired);
     }
-  }, [fromParam, t.sessionExpired]);
+  }, [searchParams.from, t.sessionExpired]);
 
   // Toggle password visibility
   const togglePasswordVisibility = () => {
@@ -138,7 +155,7 @@ export default function Login() {
         email: data.email,
         password: data.password,
         redirect: false,
-        callbackUrl,
+        callbackUrl: searchParams.callbackUrl,
       });
 
       if (result?.error) {
@@ -154,7 +171,7 @@ export default function Login() {
         
         // Clear any previous errors
         toast.success(language === "ne" ? "सफलतापूर्वक लग इन गरियो" : "Successfully logged in");
-        router.push(callbackUrl);
+        router.push(searchParams.callbackUrl);
         router.refresh();
       }
     } catch (error) {
